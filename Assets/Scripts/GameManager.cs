@@ -242,28 +242,39 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("MergeCost", MergeCost += 2000);
 
         PlayerPrefs.SetInt("money", money);
-
-        for (ForUpgrade = 0; ForUpgrade < UpgradeBalls.Count; ForUpgrade++)
+        foreach (var upgradeChecker in UpgradeBalls)
         {
-            if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
+            if (upgradeChecker.ballCount >= 3)
             {
-                for (int j = 0; j < 3; j++)
+                for (ForUpgrade = 0; ForUpgrade < UpgradeBalls.Count; ForUpgrade++)
                 {
-                    GameObject ball = UpgradeBalls[ForUpgrade].balls[0];
-                    ball.transform.DOMove(Camera.main.transform.GetChild(0).transform.position, 1).OnComplete(() => SetActiveFalse(ball));
-                    UpgradeBalls[ForUpgrade].balls.RemoveAt(0);
-                    ballcount--;
-                    UpgradeBalls[ForUpgrade].ballCount--;
-                }
+                    if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            GameObject ball = UpgradeBalls[ForUpgrade].balls[0];
+                            ball.transform.DOMove(Camera.main.transform.GetChild(0).transform.position, 1).OnComplete(() => SetActiveFalse(ball));
+                            UpgradeBalls[ForUpgrade].balls.RemoveAt(0);
+                            ballcount--;
+                            UpgradeBalls[ForUpgrade].ballCount--;
+                        }
 
-                Upgrade(ballPrefabs[ForUpgrade + 1], ForUpgrade + 1);
-                if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
-                    MergeButton.interactable = true;
-                else
-                    MergeButton.interactable = false;
-                break;
+                        Upgrade(ballPrefabs[ForUpgrade + 1], ForUpgrade + 1);
+                        if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
+                            MergeButton.interactable = true;
+                        else
+                            MergeButton.interactable = false;
+                        break;
+                    }
+                }
+                // Toplarý birleþtirme iþlemi burada yapýlacak
+                // Örnek olarak, ilk 3 topu birleþtirip yeni bir top yaratma iþlemi
+                // Daha sonra, `upgradeChecker` listesinden bu toplarý çýkarýn ve yeni topu ekleyin
+
+                break; // Ýþlem tamamlandýktan sonra döngüden çýk
             }
         }
+        
     }
     public void UpdateTexts()
     {
@@ -293,10 +304,6 @@ public class GameManager : MonoBehaviour
     
     public void CheckIdles()
     {
-        //if (money < BallsCost)
-        //    BallsButton.interactable = false;
-        //else
-        //    BallsButton.interactable = true;
         BallsButton.interactable = (money >= BallsCost) && (ballcount  < maxBallCount);
 
         //if (money < IncomesCost)
@@ -326,6 +333,17 @@ public class GameManager : MonoBehaviour
         //    MergeButton.interactable = true;
         //else
         //    MergeButton.interactable = false;
+        bool canMerge = false; // Merge için gerekli koþulun baþlangýçta false olduðunu varsayalým
+        foreach (var upgradeChecker in UpgradeBalls)
+        {
+            if (upgradeChecker.ballCount >= 3) // Herhangi bir top türünden 3 veya daha fazla top var mý?
+            {
+                canMerge = true;
+                break; // Eðer varsa, döngüden çýk
+            }
+        }
+
+        MergeButton.interactable = canMerge;
     }
 
     void AddMoneyClick(int amount)
