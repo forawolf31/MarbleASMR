@@ -19,8 +19,8 @@ public class GateController : MonoBehaviour
         {
             if (other.gameObject.CompareTag("player"))
             {
-                kapi.transform.DORotate(new Vector3(0, -45, 0), 0.5f, RotateMode.WorldAxisAdd);
-                GameManager.manager.AddMoney(other.GetComponent<Balls>().Income);
+            kapi.transform.DORotate(new Vector3(0, -45, 0), 0.5f, RotateMode.WorldAxisAdd);
+            GameManager.manager.AddMoney(other.GetComponent<Balls>().Income);
                 StopAllCoroutines();
                 StartCoroutine(ReturnGate());
             TriggerObjectCreation();

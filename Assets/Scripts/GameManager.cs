@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] Button BallsButton;
     [SerializeField] Button AddRoadButton;
-    [SerializeField] Button IncomesButton;
+    [SerializeField] public Button IncomesButton;
     [SerializeField] Button MergeButton;
     [SerializeField] Button AutoClickButton;
 
@@ -44,7 +44,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_Text moneyText;
     public static GameManager manager;
     public GameObject[] ballPrefabs;
-    private int ballcount;
+    public int ballcount;
     [SerializeField] private int maxBallCount;
     private List<UpgradeChecker> UpgradeBalls = new List<UpgradeChecker>();
 
@@ -60,14 +60,16 @@ public class GameManager : MonoBehaviour
     
     
     public int moneyPerClick = 5;
+    public int autoClickIncome = 10;  // Otomatik týklama baþýna kazanýlan para miktarý (saniyede)
     private float nextClickTime = 0.0f; // sonraki oto týklama için zaman
     public float clickInterval = 1.0f; // týklamalar arasýndaki süre 
+    [SerializeField] private TMP_Text autoClickIncomeText;
+
     // click efekt
     public TMP_Text textPrefab; // TextMeshPro prefab'ý
     public float displayDuration = 2.0f; // Text'in ekranda kalacaðý süre
     public Canvas canvas; // Canvas referansý
-
-
+ 
     private void OnEnable()
     {
         if (manager == null)
@@ -115,39 +117,36 @@ public class GameManager : MonoBehaviour
     {
 
         if (Input.GetMouseButtonDown(0) && !hasClicked)
-        {
-            // týklama zamanýný kaydedin
+        {            
             lastClickTime = Time.time;
             
-            // rotationDurationý yarýya düþür
             Time.timeScale = fastForwardSpeed;
 
-            // ilk týklamayý takip eden bayraðý iþaretle
             hasClicked = true;
         }
         // eðer 3 saniye içinde týklanmazsa ve dönme süresi hala düþükse, eski süreye geri yükleyin
-        if (hasClicked && Time.time - lastClickTime >= 0.17f)
+        if (hasClicked && Time.time - lastClickTime >= 1f)
         {
             Time.timeScale = 1;
-            hasClicked = false; // Ýlk týklamayý takip eden bayraðý sýfýrla
+            hasClicked = false; 
         }
 
-        //// ekrana her týklandýðýnda barý artýr
-        //if (Input.GetMouseButtonDown(0)) 
-        //{
-        //    barImage.fillAmount += 0.042f ; // bar doluluðunu yüzde olarak artýr
-        //    AddMoney(moneyPerClick);
-        //    CreateTextAtPosition(Input.mousePosition);
-        //}
+        // ekrana her týklandýðýnda barý artýr
+        if (Input.GetMouseButtonDown(0))
+        {
+            //barImage.fillAmount += 0.042f; // bar doluluðunu yüzde olarak artýr
+            AddMoney(moneyPerClick);
+            CreateTextAtPosition(Input.mousePosition);
+        }
 
         // Otomatik týklama için zaman kontrolü
         if (Time.time >= nextClickTime)
         {
-            AddMoney(moneyPerClick);
+            AddMoney(autoClickIncome);
+            UpdateAutoClickIncomeText();  // Yeni metni burada çaðýr
             nextClickTime = Time.time + clickInterval;
         }
 
-        //// bar doluluðunu sürekli azalt
         //barImage.fillAmount -= decreaseRate * Time.deltaTime/3;
 
         money = PlayerPrefs.GetInt("money", 0);
@@ -162,8 +161,9 @@ public class GameManager : MonoBehaviour
         BallsCost = PlayerPrefs.GetInt("BallCost", 0);
         MergeCost = PlayerPrefs.GetInt("MergeCost", 2000);
         AddRoadCost = PlayerPrefs.GetInt("AddRoadCost", 100000);
-        AddRoadCost = PlayerPrefs.GetInt("AddRoadCost", 100000);
+        AutoClickCost = PlayerPrefs.GetInt("AutoClickCost", 1000);
         IncomesCost = PlayerPrefs.GetInt("IncomesCost", 1000);
+        moneyPerClick = PlayerPrefs.GetInt("moneyPerClick", 5);
 
         UpdateTexts();
         //StartCoroutine(SpawnBalls());
@@ -238,7 +238,7 @@ public class GameManager : MonoBehaviour
 
 
         MergeCost = PlayerPrefs.GetInt("MergeCost", 2000);
-        money -= MergeCost;
+        //money -= MergeCost;
         PlayerPrefs.SetInt("MergeCost", MergeCost += 2000);
 
         PlayerPrefs.SetInt("money", money);
@@ -257,10 +257,10 @@ public class GameManager : MonoBehaviour
                 }
 
                 Upgrade(ballPrefabs[ForUpgrade + 1], ForUpgrade + 1);
-                //if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
-                //    Mergebutton.SetActive(true);
-                //else
-                //    Mergebutton.SetActive(false);
+                if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
+                    MergeButton.interactable = true;
+                else
+                    MergeButton.interactable = false;
                 break;
             }
         }
@@ -270,6 +270,7 @@ public class GameManager : MonoBehaviour
         MergeCostText.text = "$" + MergeCost;
         BallsCostText.text = "$" + BallsCost.ToString();
         AddRoadCostText.text = "$" + AddRoadCost;
+        AutoClickCostText.text = "$" + AutoClickCost;
         IncomesCostText.text = "$" + IncomesCost;
     }
 
@@ -289,17 +290,24 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("money", money);
         Application.LoadLevel(bolumismi);
     }
+    
     public void CheckIdles()
     {
-        if (money < BallsCost)
-            BallsButton.interactable = false;
-        else
-            BallsButton.interactable = true;
+        //if (money < BallsCost)
+        //    BallsButton.interactable = false;
+        //else
+        //    BallsButton.interactable = true;
+        BallsButton.interactable = (money >= BallsCost) && (ballcount  < maxBallCount);
 
-        if (money < IncomesCost)
-            IncomesButton.interactable = false;
-        else
-            IncomesButton.interactable = true;
+        //if (money < IncomesCost)
+        //    IncomesButton.interactable = false;
+        //else
+        //    IncomesButton.interactable = true;
+        //if (Ýncome.income.Incomecount + 1 <= Ýncome.income.Incomes.Count)
+        //    IncomesButton.interactable = true;
+        //else
+        //IncomesButton.interactable = false;
+        //IncomesButton.interactable = (money >= IncomesCost) && (Ýncome.income.Incomecount + 1 <= Ýncome.income.Incomes.Count);
 
         if (money < MergeCost)
             MergeButton.interactable = false;
@@ -310,24 +318,49 @@ public class GameManager : MonoBehaviour
             AddRoadButton.interactable = false;
         else
             AddRoadButton.interactable = true;
+        if (money < AutoClickCost)
+            AutoClickButton.interactable = false;
+        else
+            AutoClickButton.interactable = true;
         //if (UpgradeBalls[ForUpgrade].balls.Count >= 3)
         //    MergeButton.interactable = true;
         //else
         //    MergeButton.interactable = false;
     }
-    
+
     void AddMoneyClick(int amount)
     {
         money += amount;
         Debug.Log("Toplam Para: " + money);
     }
 
-    public void UpgradeClickValue()
+    private int autoClickUpgradeIndex = 0;
+    private int[] autoClickUpgradeAmounts = new int[19]
     {
-        if (clickInterval > 0.1f) // Týklama aralýðýný minimum bir deðere indirgemek için kontrol
+        15, 25, 50, 100, 300, 500, 1000, 3000, 5000, 10000,
+        30000, 50000, 100000, 300000, 500000, 1000000, 3000000, 5000000, 10000000
+    };
+    public void UpgradeClickValue(int increaseAmount)
+    {
+
+        AutoClickCost = PlayerPrefs.GetInt("AutoClickCost", 1000);
+        money -= AutoClickCost;
+
+        PlayerPrefs.SetInt("AutoClickCost", AutoClickCost += 2000);
+
+
+        PlayerPrefs.SetInt("money", money);
+        if (autoClickUpgradeIndex < autoClickUpgradeAmounts.Length)
         {
-            clickInterval /= 10; // Örnek olarak, her yükseltmede týklama aralýðýný yarýya indir
+            autoClickIncome += autoClickUpgradeAmounts[autoClickUpgradeIndex];
+            autoClickUpgradeIndex++;
+            UpdateAutoClickIncomeText();
         }
+    }
+
+    private void UpdateAutoClickIncomeText()
+    {
+        autoClickIncomeText.text = "Income: $" + (autoClickIncome / clickInterval).ToString("F2") + " per second";
     }
 
     void CreateTextAtPosition(Vector3 position)

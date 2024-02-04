@@ -6,13 +6,14 @@ public class İncome : MonoBehaviour
 {
     public List<GameObject> Incomes = new List<GameObject>();
     [SerializeField] private GameObject Incomesbutton;
+    public static İncome income;
 
     public int Incomecount=20;
     public GameObject IncomePrefab;
     public int IncomeFix;
     private void Update()
     {
-        
+        CheckIncome();
     }
     private void Start()
     {
@@ -27,19 +28,17 @@ public class İncome : MonoBehaviour
     }
     private void CheckIncome()
     {
-
-        //if (Incomecount >= Incomes[IncomeFix])
-        //    Incomesbutton.SetActive(true);
-        //else
-        //    Incomesbutton.SetActive(false);
-
+        GameManager.manager.IncomesButton.interactable = (GameManager.manager.money >= GameManager.manager.IncomesCost) && (Incomecount + 1 <= Incomes.Count);
     }
     public void Incometrue()
     {
+        GameManager.manager.moneyPerClick = PlayerPrefs.GetInt("moneyPerClick", 10);
+        PlayerPrefs.SetInt("moneyPerClick", GameManager.manager.moneyPerClick += 10);
+        
         GameManager.manager.money -= GameManager.manager.IncomesCost;
-
+        
         GameManager.manager.IncomesCost = PlayerPrefs.GetInt("IncomesCost", 1000);
-        GameManager.manager.money -= GameManager.manager.IncomesCost;
+        
         PlayerPrefs.SetInt("IncomesCost", GameManager.manager.IncomesCost += 1000);
         PlayerPrefs.SetInt("money", GameManager.manager.money);
 
